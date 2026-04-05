@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection - any auth user can read (for member lookup), only self can write
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Personal transactions - strict user isolation
+    match /transactions/{txId} {
+      allow create: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+      allow read, update, delete: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    // Categories - strict user isolation
+    match /categories/{catId} {
+      allow create: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid;
+      allow read, update, delete: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    // Groups - only members can read/update, creator can delete
+    match /groups/{groupId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.member_uids;
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.member_uids;
+      allow delete: if request.auth != null
+        && resource.data.created_by == request.auth.uid;
+    }
+
+    // Group transactions - only group members can access (verified via group_id lookup)
+    match /group_transactions/{txId} {
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(request.resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(request.resource.data.group_id)).data.member_uids;
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.group_id)).data.member_uids;
+      allow update, delete: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.group_id)).data.member_uids
+        && (resource.data.created_by == request.auth.uid
+            || get(/databases/$(database)/documents/groups/$(resource.data.group_id)).data.created_by == request.auth.uid);
+    }
+
+    // Monthly pools - only group members can access
+    match /monthly_pools/{poolId} {
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(request.resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(request.resource.data.group_id)).data.member_uids;
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.group_id)).data.member_uids;
+      allow update, delete: if request.auth != null
+        && exists(/databases/$(database)/documents/groups/$(resource.data.group_id))
+        && request.auth.uid in get(/databases/$(database)/documents/groups/$(resource.data.group_id)).data.member_uids;
+    }
+
+    // Notifications - strict user isolation
+    match /notifications/{notifId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null
+        && resource.data.user_id == request.auth.uid;
+    }
+  }
+}
