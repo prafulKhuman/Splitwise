@@ -7,8 +7,9 @@ import {
 import {
   Dashboard, Receipt, Category, BarChart,
   ChevronLeft, ChevronRight, AccountBalanceWallet,
-  Logout, Settings, Group, Savings,
+  Logout, Settings, Group, Savings, HelpOutline,
 } from "@mui/icons-material";
+import HelpGuide from "@/components/HelpGuide";
 import { useAuth } from "@/context/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { useRouter, usePathname } from "next/navigation";
@@ -18,12 +19,12 @@ const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 72;
 
 const navItems = [
-  { label: "Dashboard", icon: <Dashboard />, href: "/" },
-  { label: "Transactions", icon: <Receipt />, href: "/expenses" },
-  { label: "Categories", icon: <Category />, href: "/categories" },
-  { label: "Groups", icon: <Group />, href: "/groups" },
-  { label: "Pool", icon: <Savings />, href: "/pool" },
-  { label: "Reports", icon: <BarChart />, href: "/reports" },
+  { label: "Dashboard", icon: <Dashboard />, href: "/", hint: "कुल आय-खर्च देखें" },
+  { label: "Transactions", icon: <Receipt />, href: "/expenses", hint: "आय/खर्च जोड़ें" },
+  { label: "Categories", icon: <Category />, href: "/categories", hint: "खर्च के प्रकार बनाएं" },
+  { label: "Groups", icon: <Group />, href: "/groups", hint: "दोस्तों से खर्चा बाँटें" },
+  { label: "Pool", icon: <Savings />, href: "/pool", hint: "मंथली पैसे इकट्ठा करें" },
+  { label: "Reports", icon: <BarChart />, href: "/reports", hint: "खर्च की रिपोर्ट देखें" },
 ];
 
 type Props = {
@@ -40,6 +41,7 @@ export default function Sidebar({ open, onToggle, variant = "permanent", mobileO
   const router = useRouter();
   const pathname = usePathname();
   const [hovered, setHovered] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const userName = user?.displayName || user?.email?.split("@")[0] || "User";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -88,7 +90,7 @@ export default function Sidebar({ open, onToggle, variant = "permanent", mobileO
                 }}
               >
                 <ListItemIcon sx={{ color: isActive ? "#fff" : "#8C8CA1", minWidth: open ? 40 : "unset", justifyContent: "center" }}>{item.icon}</ListItemIcon>
-                {open && <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 14, fontWeight: isActive ? 600 : 500, color: isActive ? "#fff" : "#8C8CA1" }} />}
+                {open && <ListItemText primary={item.label} secondary={item.hint} primaryTypographyProps={{ fontSize: 14, fontWeight: isActive ? 600 : 500, color: isActive ? "#fff" : "#8C8CA1" }} secondaryTypographyProps={{ fontSize: 11, color: isActive ? "rgba(255,255,255,0.7)" : "#6C6C80" }} />}
               </ListItemButton>
             </Tooltip>
           );
@@ -96,6 +98,23 @@ export default function Sidebar({ open, onToggle, variant = "permanent", mobileO
       </List>
 
       <Divider sx={{ borderColor: "rgba(255,255,255,0.06)", mx: 1.5 }} />
+
+      <Box sx={{ px: 1, pb: 0.5 }}>
+        <Tooltip title={open ? "" : "Help Guide"} placement="right" arrow>
+          <ListItemButton
+            onClick={() => { setHelpOpen(true); handleNavClick(); }}
+            sx={{
+              borderRadius: 2, px: open ? 2 : 0,
+              justifyContent: open ? "flex-start" : "center", minHeight: 46,
+              background: "rgba(255,107,138,0.08)",
+              "&:hover": { background: "rgba(255,107,138,0.15)" },
+            }}
+          >
+            <ListItemIcon sx={{ color: "#FF6B8A", minWidth: open ? 40 : "unset", justifyContent: "center" }}><HelpOutline /></ListItemIcon>
+            {open && <ListItemText primary="Help Guide" primaryTypographyProps={{ fontSize: 14, fontWeight: 600, color: "#FF6B8A" }} />}
+          </ListItemButton>
+        </Tooltip>
+      </Box>
 
       <Box sx={{ p: open ? 2 : 1, display: "flex", flexDirection: "column", gap: 1 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: open ? 1.5 : 0.5, borderRadius: 2, background: "rgba(255,255,255,0.04)", justifyContent: open ? "flex-start" : "center" }}>
@@ -130,6 +149,8 @@ export default function Sidebar({ open, onToggle, variant = "permanent", mobileO
           </IconButton>
         </Box>
       )}
+
+      <HelpGuide open={helpOpen} onClose={() => setHelpOpen(false)} />
     </>
   );
 

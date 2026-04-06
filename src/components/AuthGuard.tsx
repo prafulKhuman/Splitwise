@@ -10,11 +10,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith("/auth");
 
+  const isVerified = user?.emailVerified || user?.providerData[0]?.providerId === "google.com";
+
   useEffect(() => {
     if (loading) return;
-    if (!user && !isAuthPage) router.replace("/auth/login");
-    if (user && isAuthPage) router.replace("/");
-  }, [user, loading, isAuthPage, router]);
+    if (!isVerified && !isAuthPage) router.replace("/auth/login");
+    if (isVerified && isAuthPage) router.replace("/");
+  }, [isVerified, loading, isAuthPage, router]);
 
   if (loading) {
     return (
@@ -24,8 +26,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isAuthPage) return null;
-  if (user && isAuthPage) return null;
+  if (!isVerified && !isAuthPage) return null;
+  if (isVerified && isAuthPage) return null;
 
   return <>{children}</>;
 }

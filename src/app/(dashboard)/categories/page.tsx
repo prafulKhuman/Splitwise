@@ -27,9 +27,9 @@ export default function CategoriesPage() {
 
   return (
     <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          <Typography variant="h6" fontWeight={700}>Categories</Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center", flex: 1, minWidth: 0, flexWrap: "wrap" }}>
+          <Typography variant="h6" fontWeight={700} sx={{ display: { xs: "none", sm: "block" } }}>Categories</Typography>
           <ToggleButtonGroup value={typeFilter} exclusive onChange={(_, v) => v && setTypeFilter(v)} size="small">
             <ToggleButton value="all">All</ToggleButton>
             <ToggleButton value="expense">Expense</ToggleButton>
@@ -37,7 +37,7 @@ export default function CategoriesPage() {
           </ToggleButtonGroup>
         </Box>
         <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}
-          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" } }}>
+          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" }, minWidth: "auto" }}>
           Add
         </Button>
       </Box>

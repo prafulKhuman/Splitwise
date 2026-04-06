@@ -19,8 +19,9 @@ export default function GroupsPage() {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="h6" fontWeight={700}>My Groups</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={() => setDialogOpen(true)}
-          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" } }}>
-          Create Group
+          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" }, minWidth: "auto" }}>
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Create Group</Box>
+          <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Create</Box>
         </Button>
       </Box>
 
@@ -31,7 +32,7 @@ export default function GroupsPage() {
           {groups.map((group) => (
             <Paper key={group.id} component={Link} href={`/groups/${group.id}`}
               sx={{
-                p: 3, textDecoration: "none", color: "inherit",
+                p: { xs: 2, sm: 3 }, textDecoration: "none", color: "inherit",
                 transition: "transform 0.2s, box-shadow 0.2s",
                 "&:hover": { transform: "translateY(-4px)", boxShadow: "0 8px 30px rgba(0,0,0,0.1)" },
                 display: "flex", flexDirection: "column", gap: 1.5,

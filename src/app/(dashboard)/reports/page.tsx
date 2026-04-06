@@ -64,28 +64,30 @@ export default function ReportsPage() {
       {/* Export Buttons */}
       <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end", flexWrap: "wrap" }}>
         <Button size="small" variant="outlined" startIcon={<Download />}
-          onClick={() => exportTransactionsCSV(transactions)} sx={{ textTransform: "none" }}>
-          Export CSV
+          onClick={() => exportTransactionsCSV(transactions)} sx={{ textTransform: "none", flex: { xs: 1, sm: "none" } }}>
+          CSV
         </Button>
         <Button size="small" variant="outlined" startIcon={<PictureAsPdf />}
-          onClick={() => exportTransactionsPDF(transactions)} sx={{ textTransform: "none" }}>
-          Export PDF
+          onClick={() => exportTransactionsPDF(transactions)} sx={{ textTransform: "none", flex: { xs: 1, sm: "none" } }}>
+          PDF
         </Button>
       </Box>
 
       {/* Summary Stats */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
         {[
-          { label: "Total Income", value: formatCurrency(totalIncome), color: "#1DC9B7", icon: <TrendingUp /> },
-          { label: "Total Expenses", value: formatCurrency(totalExpense), color: "#FD397A", icon: <TrendingDown /> },
-          { label: "Net Savings", value: formatCurrency(totalIncome - totalExpense), color: "#6C63FF", icon: <PieChart /> },
-          { label: "Transactions", value: transactions.length, color: "#FFB822", icon: <Receipt /> },
+          { label: "Income", value: formatCurrency(totalIncome), color: "#1DC9B7", icon: <TrendingUp /> },
+          { label: "Expenses", value: formatCurrency(totalExpense), color: "#FD397A", icon: <TrendingDown /> },
+          { label: "Savings", value: formatCurrency(totalIncome - totalExpense), color: "#6C63FF", icon: <PieChart /> },
+          { label: "Count", value: transactions.length, color: "#FFB822", icon: <Receipt /> },
         ].map((s) => (
-          <Paper key={s.label} sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color }}>{s.icon}</Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
-              <Typography variant="body1" fontWeight={700}>{s.value}</Typography>
+          <Paper key={s.label} sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, borderRadius: 2, bgcolor: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color, flexShrink: 0 }}>
+              {s.icon}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: 10, sm: 12 } }}>{s.label}</Typography>
+              <Typography variant="body1" fontWeight={700} noWrap sx={{ fontSize: { xs: "0.8rem", sm: "1rem" } }}>{s.value}</Typography>
             </Box>
           </Paper>
         ))}

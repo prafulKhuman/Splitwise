@@ -2,14 +2,14 @@
 import { useState } from "react";
 import {
   Box, Paper, Typography, TextField, Button,
-  InputAdornment, IconButton, CircularProgress, Divider,
+  InputAdornment, IconButton, CircularProgress, Divider, Dialog, DialogContent,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Email, Lock, AccountBalanceWallet, Google } from "@mui/icons-material";
+import { Visibility, VisibilityOff, Email, Lock, AccountBalanceWallet, Google, MarkEmailRead } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, sendEmailVerification } from "firebase/auth";
 
 const floatingKeyframes = `
 @keyframes float1 { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function LoginPage() {
       const cred = await signInWithEmailAndPassword(auth, form.email, form.password);
       if (!cred.user.emailVerified) {
         await auth.signOut();
-        showToast("📧 Please verify your email first.", "warning");
+        setUnverifiedEmail(form.email);
         return;
       }
       showToast("Login successful!", "success");
@@ -65,39 +67,71 @@ export default function LoginPage() {
         <Paper elevation={24} sx={{ maxWidth: 440, width: "100%", p: { xs: 3, sm: 5 }, borderRadius: { xs: 3, sm: 4 }, animation: "slideUp 0.6s ease-out", position: "relative", overflow: "hidden" }}>
           <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg, #6C63FF, #FF6B8A, #1DC9B7)" }} />
 
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Box sx={{ width: 64, height: 64, borderRadius: 3, background: "linear-gradient(135deg, #6C63FF, #8B83FF)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2, animation: "pulse 2s ease-in-out infinite" }}>
-              <AccountBalanceWallet sx={{ fontSize: 32, color: "#fff" }} />
-            </Box>
-            <Typography variant="h4" fontWeight={800} sx={{ background: "linear-gradient(135deg, #6C63FF, #FF6B8A)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Welcome Back</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Sign in to manage your expenses</Typography>
-          </Box>
+          <>
+              <Box sx={{ textAlign: "center", mb: 4 }}>
+                <Box sx={{ width: 64, height: 64, borderRadius: 3, background: "linear-gradient(135deg, #6C63FF, #8B83FF)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2, animation: "pulse 2s ease-in-out infinite" }}>
+                  <AccountBalanceWallet sx={{ fontSize: 32, color: "#fff" }} />
+                </Box>
+                <Typography variant="h4" fontWeight={800} sx={{ background: "linear-gradient(135deg, #6C63FF, #FF6B8A)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Welcome Back</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Sign in to manage your expenses</Typography>
+              </Box>
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField fullWidth label="Email Address" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required sx={{ mb: 2.5 }}
-              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Email sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
-            <TextField fullWidth label="Password" type={showPw ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required sx={{ mb: 3 }}
-              slotProps={{ input: {
-                startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment>,
-                endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">{showPw ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>,
-              } }} />
-            <Button type="submit" fullWidth variant="contained" size="large" disabled={loading}
-              sx={{ py: 1.5, fontSize: "1rem", background: "linear-gradient(135deg, #6C63FF, #8B83FF)", boxShadow: "0 4px 20px rgba(108,99,255,0.4)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" } }}>
-              {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Sign In"}
-            </Button>
-          </Box>
+              <Box component="form" onSubmit={handleSubmit}>
+                <TextField fullWidth label="Email Address" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required sx={{ mb: 2.5 }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><Email sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
+                <TextField fullWidth label="Password" type={showPw ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required sx={{ mb: 3 }}
+                  slotProps={{ input: {
+                    startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment>,
+                    endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">{showPw ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>,
+                  } }} />
+                <Button type="submit" fullWidth variant="contained" size="large" disabled={loading}
+                  sx={{ py: 1.5, fontSize: "1rem", background: "linear-gradient(135deg, #6C63FF, #8B83FF)", boxShadow: "0 4px 20px rgba(108,99,255,0.4)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" } }}>
+                  {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Sign In"}
+                </Button>
+              </Box>
 
-          <Divider sx={{ my: 3 }}><Typography variant="body2" color="text.secondary">OR</Typography></Divider>
+              <Divider sx={{ my: 3 }}><Typography variant="body2" color="text.secondary">OR</Typography></Divider>
 
-          <Button fullWidth variant="outlined" size="large" startIcon={<Google />} onClick={handleGoogle} disabled={loading}
-            sx={{ py: 1.2, borderColor: "#E4E6EF", color: "#3F4254", "&:hover": { borderColor: "#6C63FF", bgcolor: "#6C63FF08" } }}>
-            Continue with Google
-          </Button>
+              <Button fullWidth variant="outlined" size="large" startIcon={<Google />} onClick={handleGoogle} disabled={loading}
+                sx={{ py: 1.2, borderColor: "#E4E6EF", color: "#3F4254", "&:hover": { borderColor: "#6C63FF", bgcolor: "#6C63FF08" } }}>
+                Continue with Google
+              </Button>
 
-          <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
-            Don&apos;t have an account?{" "}
-            <Link href="/auth/register" style={{ color: "#6C63FF", fontWeight: 600, textDecoration: "none" }}>Create Account</Link>
-          </Typography>
+              <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
+                Don&apos;t have an account?{" "}
+                <Link href="/auth/register" style={{ color: "#6C63FF", fontWeight: 600, textDecoration: "none" }}>Create Account</Link>
+              </Typography>
+          </>
+
+          <Dialog open={!!unverifiedEmail} onClose={() => setUnverifiedEmail("")} PaperProps={{ sx: { borderRadius: 3, p: 1, maxWidth: 400 } }}>
+            <DialogContent sx={{ textAlign: "center", py: 4 }}>
+              <Box sx={{ width: 64, height: 64, borderRadius: 3, background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2 }}>
+                <MarkEmailRead sx={{ fontSize: 32, color: "#fff" }} />
+              </Box>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Email Not Verified</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Please verify your email</Typography>
+              <Typography variant="body2" fontWeight={700} sx={{ color: "#FF6B8A", mb: 2, wordBreak: "break-all" }}>{unverifiedEmail}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Check your inbox & spam folder for the verification link.</Typography>
+              <Button fullWidth variant="contained" disabled={resending} onClick={async () => {
+                setResending(true);
+                try {
+                  const cred = await signInWithEmailAndPassword(auth, unverifiedEmail, form.password);
+                  await sendEmailVerification(cred.user);
+                  await auth.signOut();
+                  showToast("Verification email sent!", "success");
+                } catch {
+                  showToast("Failed to resend. Try again later.", "error");
+                } finally { setResending(false); }
+              }}
+                sx={{ mb: 1.5, py: 1.2, background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", "&:hover": { background: "linear-gradient(135deg, #CC5570, #FF6B8A)" } }}>
+                {resending ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : "Resend Verification Email"}
+              </Button>
+              <Button fullWidth variant="outlined" onClick={() => setUnverifiedEmail("")}
+                sx={{ py: 1.2, borderColor: "#E4E6EF", color: "#3F4254" }}>
+                Back to Login
+              </Button>
+            </DialogContent>
+          </Dialog>
         </Paper>
       </Box>
     </>
