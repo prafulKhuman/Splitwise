@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" }, gap: { xs: 2, md: 2.5 } }}>
         <RecentActivity expenses={data} />
-        <Paper sx={{ p: { xs: 2, sm: 2.5 }, overflow: "hidden" }}>
+        <Paper sx={{ p: { xs: 2, sm: 2.5 }, overflow: "hidden", display: { xs: "none", md: "block" } }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant="subtitle1" fontWeight={700}>Recent Transactions</Typography>
             <Button size="small" href="/expenses" sx={{ textTransform: "none", fontWeight: 600, color: "#6C63FF" }}>View All</Button>

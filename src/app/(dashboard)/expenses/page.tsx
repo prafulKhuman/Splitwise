@@ -30,20 +30,21 @@ export default function ExpensesPage() {
 
   return (
     <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
-        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flex: 1 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
           <ToggleButtonGroup value={typeFilter} exclusive onChange={(_, v) => v && setTypeFilter(v)} size="small">
             <ToggleButton value="all">All</ToggleButton>
             <ToggleButton value="expense" sx={{ "&.Mui-selected": { color: "#FD397A" } }}>Expense</ToggleButton>
             <ToggleButton value="income" sx={{ "&.Mui-selected": { color: "#1DC9B7" } }}>Income</ToggleButton>
           </ToggleButtonGroup>
-          <TextField select size="small" label="Category" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} sx={{ minWidth: 140 }}>
+          <TextField select size="small" label="Category" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} sx={{ minWidth: 120, display: { xs: "none", sm: "flex" } }}>
             {catNames.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </TextField>
         </Box>
         <Button variant="contained" startIcon={<Add />} onClick={() => { setEditing(null); setDialogOpen(true); }}
-          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" }, whiteSpace: "nowrap" }}>
-          Add Transaction
+          sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" }, whiteSpace: "nowrap", minWidth: "auto", px: { xs: 2, sm: 3 } }}>
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Add Transaction</Box>
+          <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Add</Box>
         </Button>
       </Box>
 

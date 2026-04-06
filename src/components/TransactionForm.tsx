@@ -63,10 +63,13 @@ export default function TransactionForm({ open, onClose, onSave, transaction }: 
   const handleSubmit = () => {
     if (!form.title || !form.amount || !form.date) return;
     onSave({
-      ...form,
+      title: form.title,
       amount: Number(form.amount),
+      category: form.category,
+      date: form.date,
+      notes: form.notes || "",
       type,
-      splits: useSplit && splits.length > 0 ? splits : undefined,
+      ...(useSplit && splits.length > 0 ? { splits } : {}),
     });
     onClose();
   };

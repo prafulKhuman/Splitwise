@@ -6,8 +6,9 @@ import {
 } from "@mui/material";
 import {
   Search, Notifications, Logout, Person, Home, NavigateNext,
-  Menu as MenuIcon, DarkMode, LightMode, DoneAll, Circle,
+  Menu as MenuIcon, DarkMode, LightMode, DoneAll, Circle, HelpOutline,
 } from "@mui/icons-material";
+import HelpGuide from "@/components/HelpGuide";
 import { useAuth } from "@/context/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
 import { useThemeMode } from "@/theme/ThemeRegistry";
@@ -40,6 +41,7 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const userName = user?.displayName || user?.email?.split("@")[0] || "User";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -80,28 +82,34 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
         <Box sx={{ minWidth: 0 }}>
           <Breadcrumbs
             separator={<NavigateNext sx={{ fontSize: 14, color: "text.secondary" }} />}
-            sx={{ mb: 0.3, "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" } }}
+            sx={{ display: { xs: "none", sm: "flex" }, mb: 0.3, "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" } }}
           >
             <Link underline="hover"
-              sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary", fontSize: { xs: 11, sm: 13 }, cursor: "pointer", whiteSpace: "nowrap", "&:hover": { color: "#6C63FF" } }}>
-              <Home sx={{ fontSize: { xs: 14, sm: 16 } }} /> Home
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", "&:hover": { color: "#6C63FF" } }}>
+              <Home sx={{ fontSize: 16 }} /> Home
             </Link>
-            <Typography sx={{ fontSize: { xs: 11, sm: 13 }, color: "text.primary", fontWeight: 600, whiteSpace: "nowrap" }}>{title}</Typography>
+            <Typography sx={{ fontSize: 13, color: "text.primary", fontWeight: 600, whiteSpace: "nowrap" }}>{title}</Typography>
           </Breadcrumbs>
-          <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2, fontSize: { xs: "0.9rem", md: "1.25rem" } }}>
+          <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2, fontSize: { xs: "1rem", md: "1.25rem" } }}>
             {title}
           </Typography>
         </Box>
       </Box>
 
       <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, md: 1 }, flexShrink: 0 }}>
-        <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", bgcolor: isDark ? "rgba(255,255,255,0.05)" : "#F2F3F8", borderRadius: 2, px: 1.5, py: 0.5, width: { sm: 160, md: 220 } }}>
-          <Search sx={{ color: "text.secondary", fontSize: { xs: 18, md: 20 }, mr: 0.5 }} />
-          <InputBase placeholder="Search..." sx={{ fontSize: { xs: 12, md: 14 }, flex: 1, color: "text.primary" }} />
+        <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", bgcolor: isDark ? "rgba(255,255,255,0.05)" : "#F2F3F8", borderRadius: 2, px: 1.5, py: 0.5, width: 200 }}>
+          <Search sx={{ color: "text.secondary", fontSize: 20, mr: 0.5 }} />
+          <InputBase placeholder="Search..." sx={{ fontSize: 14, flex: 1, color: "text.primary" }} />
         </Box>
 
+        <Tooltip title="Help Guide">
+          <IconButton size="small" onClick={() => setHelpOpen(true)} sx={{ color: "text.secondary" }}>
+            <HelpOutline fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
         <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
-          <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary" }}>
+          <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary", display: { xs: "none", sm: "flex" } }}>
             {isDark ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
           </IconButton>
         </Tooltip>
@@ -168,7 +176,7 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
         </Popover>
 
         <Avatar onClick={(e) => setAnchorEl(e.currentTarget)}
-          sx={{ width: 36, height: 36, background: "linear-gradient(135deg, #6C63FF, #8B83FF)", cursor: "pointer", fontSize: 15, fontWeight: 700, borderRadius: "50%", "&:hover": { boxShadow: "0 0 0 3px rgba(108,99,255,0.2)" } }}>
+          sx={{ width: 32, height: 32, background: "linear-gradient(135deg, #6C63FF, #8B83FF)", cursor: "pointer", fontSize: 14, fontWeight: 700, borderRadius: "50%", "&:hover": { boxShadow: "0 0 0 3px rgba(108,99,255,0.2)" } }}>
           {userInitial}
         </Avatar>
 
@@ -190,6 +198,8 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
             Logout
           </MuiMenuItem>
         </Menu>
+
+        <HelpGuide open={helpOpen} onClose={() => setHelpOpen(false)} />
       </Box>
     </Box>
   );

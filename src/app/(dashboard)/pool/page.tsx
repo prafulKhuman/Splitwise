@@ -36,8 +36,8 @@ export default function PoolPage() {
 
   return (
     <>
-      <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
-        <TextField select size="small" label="Select Group" value={groupId || ""} onChange={(e) => setSelectedGroup(e.target.value)} sx={{ minWidth: 200 }}>
+      <Box sx={{ display: "flex", gap: 1.5, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
+        <TextField select size="small" label="Select Group" value={groupId || ""} onChange={(e) => setSelectedGroup(e.target.value)} sx={{ minWidth: { xs: "100%", sm: 200 } }}>
           {groups.map((g) => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}
         </TextField>
       </Box>
@@ -47,10 +47,10 @@ export default function PoolPage() {
           <AccountBalanceWallet sx={{ fontSize: 48, color: "#B5B5C3", mb: 1 }} />
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>No Active Pool</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Create a monthly pool for this group</Typography>
-          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", alignItems: "center" }}>
-            <TextField size="small" label="Contribution per member (₹)" type="number" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)} sx={{ width: 220 }} />
-            <Button variant="contained" onClick={() => { if (createAmount && group) { createPool(Number(createAmount), group.members); setCreateAmount(""); } }}
-              sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)" }}>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+            <TextField size="small" label="Amount per member (₹)" type="number" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)} sx={{ width: { xs: "100%", sm: 220 } }} />
+            <Button variant="contained" fullWidth={true} onClick={() => { if (createAmount && group) { createPool(Number(createAmount), group.members); setCreateAmount(""); } }}
+              sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", maxWidth: { sm: 200 } }}>
               Create Pool
             </Button>
           </Box>
@@ -122,19 +122,18 @@ export default function PoolPage() {
 
           {/* Pool Expenses */}
           <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
               <Typography variant="subtitle1" fontWeight={700}>Pool Expenses</Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 <Button variant="contained" size="small" startIcon={<Add />} onClick={() => setExpenseOpen(true)}
-                  sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)" }}>
+                  sx={{ background: "linear-gradient(135deg, #6C63FF, #8B83FF)", minWidth: "auto" }}>
                   Add
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<NotificationsActive />}
-                  onClick={() => sendContributionReminders(pool.id)} color="info">
-                  Remind
+                <Button variant="outlined" size="small" onClick={() => sendContributionReminders(pool.id)} color="info" sx={{ minWidth: "auto", px: 1.5 }}>
+                  <NotificationsActive sx={{ fontSize: 18 }} />
                 </Button>
-                <Button variant="outlined" size="small" startIcon={<Archive />} onClick={() => closePool(pool.id)} color="warning">
-                  Close Month
+                <Button variant="outlined" size="small" onClick={() => closePool(pool.id)} color="warning" sx={{ minWidth: "auto", px: 1.5 }}>
+                  <Archive sx={{ fontSize: 18 }} />
                 </Button>
               </Box>
             </Box>

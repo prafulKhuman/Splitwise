@@ -4,7 +4,7 @@ import {
   Box, Paper, Typography, TextField, Button,
   InputAdornment, IconButton, CircularProgress, Divider,
 } from "@mui/material";
-import { Visibility, VisibilityOff, Email, Lock, Person, AccountBalanceWallet, Google } from "@mui/icons-material";
+import { Visibility, VisibilityOff, Email, Lock, Person, AccountBalanceWallet, Google, MarkEmailRead } from "@mui/icons-material";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +37,7 @@ export default function RegisterPage() {
       await updateProfile(cred.user, { displayName: form.name });
       await sendEmailVerification(cred.user);
       await auth.signOut();
-      showToast("🎉 Registration successful! Please check your email to verify.", "info");
-      setTimeout(() => router.push("/auth/login"), 2500);
+      setVerificationSent(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed";
       showToast(msg.includes("email-already-in-use") ? "Email already in use" : msg, "error");
@@ -65,43 +65,61 @@ export default function RegisterPage() {
         <Paper elevation={24} sx={{ maxWidth: 440, width: "100%", p: { xs: 3, sm: 5 }, borderRadius: { xs: 3, sm: 4 }, animation: "slideUp 0.6s ease-out", position: "relative", overflow: "hidden" }}>
           <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg, #FF6B8A, #6C63FF, #1DC9B7)" }} />
 
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <Box sx={{ width: 64, height: 64, borderRadius: 3, background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2, animation: "pulse 2s ease-in-out infinite" }}>
-              <AccountBalanceWallet sx={{ fontSize: 32, color: "#fff" }} />
+          {verificationSent ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
+              <Box sx={{ width: 72, height: 72, borderRadius: 3, background: "linear-gradient(135deg, #1DC9B7, #17A89A)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2, animation: "pulse 2s ease-in-out infinite" }}>
+                <MarkEmailRead sx={{ fontSize: 36, color: "#fff" }} />
+              </Box>
+              <Typography variant="h5" fontWeight={800} sx={{ background: "linear-gradient(135deg, #FF6B8A, #6C63FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", mb: 1 }}>Verify Your Email</Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>We&apos;ve sent a verification link to</Typography>
+              <Typography variant="body1" fontWeight={700} sx={{ color: "#FF6B8A", mb: 2, wordBreak: "break-all" }}>{form.email}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Please check your inbox (and spam folder) and click the link to verify your account before logging in.</Typography>
+              <Button fullWidth variant="contained" size="large" onClick={() => router.push("/auth/login")}
+                sx={{ py: 1.5, fontSize: "1rem", background: "linear-gradient(135deg, #6C63FF, #8B83FF)", boxShadow: "0 4px 20px rgba(108,99,255,0.4)", "&:hover": { background: "linear-gradient(135deg, #4B44CC, #6C63FF)" } }}>
+                Go to Login
+              </Button>
             </Box>
-            <Typography variant="h4" fontWeight={800} sx={{ background: "linear-gradient(135deg, #FF6B8A, #6C63FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Create Account</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start tracking your expenses today</Typography>
-          </Box>
+          ) : (
+            <>
+              <Box sx={{ textAlign: "center", mb: 3 }}>
+                <Box sx={{ width: 64, height: 64, borderRadius: 3, background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 2, animation: "pulse 2s ease-in-out infinite" }}>
+                  <AccountBalanceWallet sx={{ fontSize: 32, color: "#fff" }} />
+                </Box>
+                <Typography variant="h4" fontWeight={800} sx={{ background: "linear-gradient(135deg, #FF6B8A, #6C63FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Create Account</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start tracking your expenses today</Typography>
+              </Box>
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField fullWidth label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required sx={{ mb: 2 }}
-              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Person sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
-            <TextField fullWidth label="Email Address" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required sx={{ mb: 2 }}
-              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Email sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
-            <TextField fullWidth label="Password" type={showPw ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required sx={{ mb: 2 }}
-              slotProps={{ input: {
-                startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment>,
-                endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">{showPw ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>,
-              } }} />
-            <TextField fullWidth label="Confirm Password" type={showPw ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required sx={{ mb: 3 }}
-              slotProps={{ input: { startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
-            <Button type="submit" fullWidth variant="contained" size="large" disabled={loading}
-              sx={{ py: 1.5, fontSize: "1rem", background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", boxShadow: "0 4px 20px rgba(255,107,138,0.4)", "&:hover": { background: "linear-gradient(135deg, #CC5570, #FF6B8A)" } }}>
-              {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Create Account"}
-            </Button>
-          </Box>
+              <Box component="form" onSubmit={handleSubmit}>
+                <TextField fullWidth label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required sx={{ mb: 2 }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><Person sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
+                <TextField fullWidth label="Email Address" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required sx={{ mb: 2 }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><Email sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
+                <TextField fullWidth label="Password" type={showPw ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required sx={{ mb: 2 }}
+                  slotProps={{ input: {
+                    startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment>,
+                    endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">{showPw ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>,
+                  } }} />
+                <TextField fullWidth label="Confirm Password" type={showPw ? "text" : "password"} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required sx={{ mb: 3 }}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><Lock sx={{ color: "#B5B5C3" }} /></InputAdornment> } }} />
+                <Button type="submit" fullWidth variant="contained" size="large" disabled={loading}
+                  sx={{ py: 1.5, fontSize: "1rem", background: "linear-gradient(135deg, #FF6B8A, #FF8FA8)", boxShadow: "0 4px 20px rgba(255,107,138,0.4)", "&:hover": { background: "linear-gradient(135deg, #CC5570, #FF6B8A)" } }}>
+                  {loading ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Create Account"}
+                </Button>
+              </Box>
 
-          <Divider sx={{ my: 3 }}><Typography variant="body2" color="text.secondary">OR</Typography></Divider>
+              <Divider sx={{ my: 3 }}><Typography variant="body2" color="text.secondary">OR</Typography></Divider>
 
-          <Button fullWidth variant="outlined" size="large" startIcon={<Google />} onClick={handleGoogle} disabled={loading}
-            sx={{ py: 1.2, borderColor: "#E4E6EF", color: "#3F4254", "&:hover": { borderColor: "#FF6B8A", bgcolor: "#FF6B8A08" } }}>
-            Continue with Google
-          </Button>
+              <Button fullWidth variant="outlined" size="large" startIcon={<Google />} onClick={handleGoogle} disabled={loading}
+                sx={{ py: 1.2, borderColor: "#E4E6EF", color: "#3F4254", "&:hover": { borderColor: "#FF6B8A", bgcolor: "#FF6B8A08" } }}>
+                Continue with Google
+              </Button>
 
-          <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
-            Already have an account?{" "}
-            <Link href="/auth/login" style={{ color: "#FF6B8A", fontWeight: 600, textDecoration: "none" }}>Sign In</Link>
-          </Typography>
+              <Typography variant="body2" textAlign="center" color="text.secondary" sx={{ mt: 3 }}>
+                Already have an account?{" "}
+                <Link href="/auth/login" style={{ color: "#FF6B8A", fontWeight: 600, textDecoration: "none" }}>Sign In</Link>
+              </Typography>
+            </>
+          )}
         </Paper>
       </Box>
     </>
