@@ -84,7 +84,7 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
             separator={<NavigateNext sx={{ fontSize: 14, color: "text.secondary" }} />}
             sx={{ display: { xs: "none", sm: "flex" }, mb: 0.3, "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" } }}
           >
-            <Link underline="hover"
+            <Link underline="hover" onClick={() => router.push("/dashboard")}
               sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", "&:hover": { color: "#6C63FF" } }}>
               <Home sx={{ fontSize: 16 }} /> Home
             </Link>
@@ -109,7 +109,7 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
         </Tooltip>
 
         <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
-          <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary", display: { xs: "none", sm: "flex" } }}>
+          <IconButton size="small" onClick={toggleMode} sx={{ color: "text.secondary" }}>
             {isDark ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
           </IconButton>
         </Tooltip>
