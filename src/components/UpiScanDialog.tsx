@@ -48,7 +48,8 @@ export default function UpiScanDialog({ open, onClose }: Props) {
   const [editMode, setEditMode] = useState(false);
 
   const cats = getCategoriesByType("expense");
-  const catNames = cats.length > 0 ? cats.map((c) => c.name) : FALLBACK_CATS;
+  const userCatNames = cats.map((c) => c.name);
+  const catNames = [...new Set([...userCatNames, ...FALLBACK_CATS])];
 
   useEffect(() => {
     if (!open) { reset(); setEditMode(false); setShowRawOcr(false); }
@@ -238,6 +239,8 @@ export default function UpiScanDialog({ open, onClose }: Props) {
               <TextField label="Transaction ID" value={parsed.txnId} disabled fullWidth size="small"
                 sx={{ "& .MuiInputBase-input": { fontSize: 12, fontFamily: "monospace", letterSpacing: 0.5 } }} />
             )}
+
+
           </Box>
         )}
 

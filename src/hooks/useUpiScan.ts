@@ -10,55 +10,89 @@ import { collection, addDoc } from "firebase/firestore";
 
 type ScanState = "idle" | "scanning" | "parsed" | "saving" | "saved" | "error";
 
-// Preprocess image: convert to grayscale, invert if dark, boost contrast
-function preprocessImage(file: File): Promise<Blob> {
-  return new Promise((resolve) => {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-
-      // Draw original
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      // Calculate average brightness
-      let totalBrightness = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
-      }
-      const avgBrightness = totalBrightness / (data.length / 4);
-      const isDark = avgBrightness < 128;
-
-      for (let i = 0; i < data.length; i += 4) {
-        let r = data[i], g = data[i + 1], b = data[i + 2];
-
-        // Convert to grayscale
-        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-
-        // Invert if dark background (white text on dark → black text on white)
-        if (isDark) gray = 255 - gray;
-
-        // Boost contrast: stretch histogram
-        gray = ((gray - 128) * 1.8) + 128;
-        gray = Math.max(0, Math.min(255, gray));
-
-        // Sharpen: threshold to make text crisper
-        gray = gray > 140 ? 255 : gray < 80 ? 0 : gray;
-
-        data[i] = gray;
-        data[i + 1] = gray;
-        data[i + 2] = gray;
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      canvas.toBlob((blob) => resolve(blob || file), "image/png");
-    };
-    img.src = URL.createObjectURL(file);
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
   });
+}
+
+// Create multiple preprocessed versions for OCR
+async function createOcrVariants(file: File): Promise<Blob[]> {
+  const url = URL.createObjectURL(file);
+  const img = await loadImage(url);
+  URL.revokeObjectURL(url);
+
+  const { width, height } = img;
+  const variants: Blob[] = [];
+
+  // --- Variant 1: Grayscale + contrast boost (works for light backgrounds) ---
+  {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      let gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      // Mild contrast boost
+      gray = ((gray - 128) * 1.5) + 128;
+      gray = Math.max(0, Math.min(255, gray));
+      d[i] = d[i + 1] = d[i + 2] = gray;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/png"));
+    variants.push(blob);
+  }
+
+  // --- Variant 2: Invert + high contrast (works for dark backgrounds) ---
+  {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const d = imageData.data;
+
+    // Check if dark
+    let totalBright = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      totalBright += (d[i] + d[i + 1] + d[i + 2]) / 3;
+    }
+    const avgBright = totalBright / (d.length / 4);
+
+    for (let i = 0; i < d.length; i += 4) {
+      let gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      if (avgBright < 128) gray = 255 - gray; // Invert dark images
+      gray = ((gray - 128) * 2.0) + 128; // Strong contrast
+      gray = Math.max(0, Math.min(255, gray));
+      d[i] = d[i + 1] = d[i + 2] = gray;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/png"));
+    variants.push(blob);
+  }
+
+  // --- Variant 3: 2x upscale (helps with small/low-res screenshots) ---
+  if (width < 1000) {
+    const scale = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, width * scale, height * scale);
+    const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/png"));
+    variants.push(blob);
+  }
+
+  return variants;
 }
 
 export function useUpiScan() {
@@ -76,56 +110,67 @@ export function useUpiScan() {
     setParsed(null);
     setRawOcr("");
 
-    // Preview
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target?.result as string);
     reader.readAsDataURL(file);
 
     try {
-      // Preprocess: invert dark screenshots, enhance contrast
-      const processedBlob = await preprocessImage(file);
-
-      // Dynamic import Tesseract.js
       const Tesseract = await import("tesseract.js");
+      const variants = await createOcrVariants(file);
 
-      // Run OCR on both original and preprocessed, pick best result
-      const [originalResult, processedResult] = await Promise.all([
+      // Run OCR on original + all variants in parallel
+      const ocrJobs = [
         Tesseract.recognize(file, "eng", { logger: () => {} }),
-        Tesseract.recognize(processedBlob, "eng", { logger: () => {} }),
-      ]);
+        ...variants.map((v) => Tesseract.recognize(v, "eng", { logger: () => {} })),
+      ];
+      const results = await Promise.all(ocrJobs);
 
-      const ocrText1 = originalResult.data.text;
-      const ocrText2 = processedResult.data.text;
+      // Parse all results and pick the best one
+      let bestResult: UpiTransaction | null = null;
+      let bestOcrText = "";
+      let bestScore = -1;
 
-      // Parse both and pick the one with higher confidence
-      const parsed1 = parseUpiText(ocrText1);
-      const parsed2 = parseUpiText(ocrText2);
+      for (const r of results) {
+        const text = r.data.text;
+        if (!text.trim()) continue;
 
-      const bestOcr = parsed2.amount > 0 && parsed2.confidence >= parsed1.confidence ? ocrText2 : ocrText1;
-      const result = parsed2.amount > 0 && parsed2.confidence >= parsed1.confidence ? parsed2 : parsed1;
+        const parsed = parseUpiText(text);
+        // Score: amount is most important, then confidence
+        const score = (parsed.amount > 0 ? 100 : 0) + parsed.confidence;
 
-      // Store raw OCR for debugging
-      setRawOcr(bestOcr);
-      console.log("=== OCR Raw Text (Original) ===\n", ocrText1);
-      console.log("=== OCR Raw Text (Processed) ===\n", ocrText2);
-      console.log("=== Parsed Result ===", result);
+        console.log(`=== OCR Variant (score: ${score}) ===\n`, text.slice(0, 200));
 
-      if (!bestOcr.trim()) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestResult = parsed;
+          bestOcrText = text;
+        }
+      }
+
+      setRawOcr(bestOcrText);
+      console.log("=== Best OCR Text ===\n", bestOcrText);
+      console.log("=== Best Parsed ===", bestResult);
+
+      if (!bestOcrText.trim()) {
         setState("error");
         setError("Could not read any text from the image. Try a clearer screenshot.");
         return;
       }
 
-      result.category = autoCategory(result.merchant);
+      if (!bestResult) {
+        bestResult = parseUpiText(bestOcrText);
+      }
 
-      if (result.amount <= 0) {
+      bestResult.category = autoCategory(bestResult.merchant);
+
+      if (bestResult.amount <= 0) {
         setState("error");
         setError("Could not extract amount. You can enter it manually below.");
-        setParsed(result);
+        setParsed(bestResult);
         return;
       }
 
-      setParsed(result);
+      setParsed(bestResult);
       setState("parsed");
     } catch (err) {
       setState("error");
