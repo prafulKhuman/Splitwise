@@ -7,7 +7,7 @@ import {
 import {
   Dashboard, Receipt, Category, BarChart,
   ChevronLeft, ChevronRight, AccountBalanceWallet,
-  Logout, Settings, Group, Savings, HelpOutline,
+  Logout, Settings, Group, Savings, HelpOutline, QrCodeScanner,
 } from "@mui/icons-material";
 import HelpGuide from "@/components/HelpGuide";
 import { useAuth } from "@/context/AuthProvider";
@@ -25,6 +25,7 @@ const navItems = [
   { label: "Groups", icon: <Group />, href: "/groups", hint: "दोस्तों से खर्चा बाँटें" },
   { label: "Pool", icon: <Savings />, href: "/pool", hint: "मंथली पैसे इकट्ठा करें" },
   { label: "Reports", icon: <BarChart />, href: "/reports", hint: "खर्च की रिपोर्ट देखें" },
+  { label: "UPI Scan", icon: <QrCodeScanner />, href: "/upi-scan", hint: "UPI स्क्रीनशॉट से खर्चा जोड़ें" },
 ];
 
 type Props = {

@@ -1,6 +1,6 @@
 "use client";
 import { Paper, BottomNavigation, BottomNavigationAction } from "@mui/material";
-import { Dashboard, Receipt, Group, BarChart, Savings } from "@mui/icons-material";
+import { Dashboard, Receipt, Group, BarChart, Savings, QrCodeScanner } from "@mui/icons-material";
 import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Groups", icon: <Group />, href: "/groups" },
   { label: "Pool", icon: <Savings />, href: "/pool" },
   { label: "Reports", icon: <BarChart />, href: "/reports" },
+  { label: "UPI Scan", icon: <QrCodeScanner />, href: "/upi-scan" },
 ];
 
 export default function MobileBottomNav() {

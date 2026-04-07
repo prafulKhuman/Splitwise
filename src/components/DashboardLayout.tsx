@@ -14,6 +14,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/groups": "Groups",
   "/pool": "Monthly Pool",
   "/reports": "Reports & Insights",
+  "/upi-scan": "UPI Scanner",
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

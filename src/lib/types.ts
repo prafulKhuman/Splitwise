@@ -134,3 +134,15 @@ export type AppNotification = {
   group_id?: string;
   created_at: string;
 };
+
+export type UpiTransaction = {
+  amount: number;
+  merchant: string;
+  date: string;
+  time: string;
+  txnId: string;
+  upiApp: string;
+  category: string;
+  confidence: number;
+  rawText: string;
+};
