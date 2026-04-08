@@ -43,6 +43,7 @@ export type Group = {
   members: GroupMember[];
   member_uids: string[];
   settings: GroupSettings;
+  is_disabled?: boolean;
   created_at: string;
 };
 
@@ -100,13 +101,21 @@ export type PoolContribution = {
   paid_at?: string;
 };
 
+export type PoolSplitMethod = "equal" | "exact" | "percentage" | "shares";
+
 export type PoolExpense = {
   id: string;
   title: string;
   amount: number;
+  category: string;
   date: string;
+  notes: string;
   paid_by: string;
+  paid_by_name: string;
+  receipt_url: string;
+  split_method: PoolSplitMethod;
   participants: string[]; // uids
+  split_details: Record<string, number>; // uid -> amount/percentage/shares
   created_at: string;
 };
 

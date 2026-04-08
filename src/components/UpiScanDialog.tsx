@@ -45,6 +45,7 @@ export default function UpiScanDialog({ open, onClose }: Props) {
   const [showRawOcr, setShowRawOcr] = useState(false);
   const { getCategoriesByType } = useCategories();
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [editMode, setEditMode] = useState(false);
 
   const cats = getCategoriesByType("expense");
@@ -107,10 +108,12 @@ export default function UpiScanDialog({ open, onClose }: Props) {
             </Typography>
             <Box sx={{ display: "flex", gap: 1, justifyContent: "center", mb: 2 }}>
               <Button variant="outlined" startIcon={<CloudUpload />} size="small"
+                onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
                 sx={{ textTransform: "none", borderColor: "#6C63FF", color: "#6C63FF" }}>
                 Choose File
               </Button>
               <Button variant="outlined" startIcon={<CameraAlt />} size="small"
+                onClick={(e) => { e.stopPropagation(); cameraRef.current?.click(); }}
                 sx={{ textTransform: "none", borderColor: "#6C63FF", color: "#6C63FF" }}>
                 Camera
               </Button>
@@ -121,7 +124,8 @@ export default function UpiScanDialog({ open, onClose }: Props) {
                   sx={{ height: 22, fontSize: 10, fontWeight: 600, bgcolor: `${APP_COLORS[app] || "#6C63FF"}15`, color: APP_COLORS[app] || "#6C63FF" }} />
               ))}
             </Box>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFile} />
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFile} />
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFile} />
           </Paper>
         )}
 

@@ -26,9 +26,11 @@ export function calculatePoolSettlements(pool: MonthlyPool, members: GroupMember
   });
 
   pool.expenses.forEach((exp) => {
-    const perPerson = exp.amount / exp.participants.length;
     exp.participants.forEach((uid) => {
-      balances[uid] = (balances[uid] || 0) - perPerson;
+      const amount = exp.split_details && exp.split_details[uid] != null
+        ? exp.split_details[uid]
+        : exp.amount / exp.participants.length;
+      balances[uid] = (balances[uid] || 0) - amount;
     });
   });
 

@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { getCurrentMonth, formatCurrency } from "@/lib/settlements";
 import {
   collection, query, where, onSnapshot,
-  addDoc, updateDoc, doc, writeBatch,
+  addDoc, updateDoc, deleteDoc, doc, writeBatch, deleteField,
 } from "firebase/firestore";
 import { v4 as uuid } from "uuid";
 
@@ -19,6 +19,8 @@ export function useMonthlyPool(groupId: string | null) {
 
   useEffect(() => {
     if (!groupId || !user) { setLoading(false); return; }
+    setLoading(true);
+    setPools([]);
     const q = query(collection(db, "monthly_pools"), where("group_id", "==", groupId));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as MonthlyPool));
@@ -53,13 +55,13 @@ export function useMonthlyPool(groupId: string | null) {
     await batch.commit();
   };
 
-  const createPool = async (contributionAmount: number, members: GroupMember[]) => {
-    if (!groupId) return;
+  const createPool = async (contributionAmount: number, members: GroupMember[]): Promise<string | null> => {
+    if (!groupId) return null;
     const month = getCurrentMonth();
-    const existing = pools.find((p) => p.month === month);
+    const existing = pools.find((p) => p.month === month && p.is_active);
     if (existing) {
-      showToast("Pool already exists for this month", "warning");
-      return;
+      showToast("An active pool already exists for this month", "warning");
+      return null;
     }
     const contributions: PoolContribution[] = members.map((m) => ({
       uid: m.uid,
@@ -67,7 +69,7 @@ export function useMonthlyPool(groupId: string | null) {
       amount: contributionAmount,
       paid: false,
     }));
-    await addDoc(collection(db, "monthly_pools"), {
+    const docRef = await addDoc(collection(db, "monthly_pools"), {
       group_id: groupId,
       month,
       contribution_amount: contributionAmount,
@@ -76,7 +78,6 @@ export function useMonthlyPool(groupId: string | null) {
       is_active: true,
       created_at: new Date().toISOString(),
     });
-    // Notify all members about new pool
     await notifyMembers(
       members.map((m) => m.uid),
       "Monthly Pool Created",
@@ -84,13 +85,14 @@ export function useMonthlyPool(groupId: string | null) {
       groupId
     );
     showToast("Monthly pool created", "success");
+    return docRef.id;
   };
 
   const markContribution = async (poolId: string, uid: string, paid: boolean) => {
     const pool = pools.find((p) => p.id === poolId);
     if (!pool) return;
     const updated = pool.contributions.map((c) =>
-      c.uid === uid ? { ...c, paid, paid_at: paid ? new Date().toISOString() : undefined } : c
+      c.uid === uid ? { ...c, paid, paid_at: paid ? new Date().toISOString() : null } : c
     );
     await updateDoc(doc(db, "monthly_pools", poolId), { contributions: updated });
     // Notify the user whose contribution was marked
@@ -136,6 +138,12 @@ export function useMonthlyPool(groupId: string | null) {
     const newExpense: PoolExpense = {
       ...expense,
       id: uuid(),
+      category: expense.category || "Other",
+      notes: expense.notes || "",
+      paid_by_name: expense.paid_by_name || "",
+      receipt_url: expense.receipt_url || "",
+      split_method: expense.split_method || "equal",
+      split_details: expense.split_details || {},
       created_at: new Date().toISOString(),
     };
     await updateDoc(doc(db, "monthly_pools", poolId), {
@@ -156,7 +164,6 @@ export function useMonthlyPool(groupId: string | null) {
   const closePool = async (poolId: string) => {
     const pool = pools.find((p) => p.id === poolId);
     await updateDoc(doc(db, "monthly_pools", poolId), { is_active: false });
-    // Notify members about pool closure
     if (pool && groupId) {
       await notifyMembers(
         pool.contributions.map((c) => c.uid),
@@ -166,6 +173,20 @@ export function useMonthlyPool(groupId: string | null) {
       );
     }
     showToast("Pool closed and archived", "success");
+  };
+
+  const deletePool = async (poolId: string) => {
+    const pool = pools.find((p) => p.id === poolId);
+    await deleteDoc(doc(db, "monthly_pools", poolId));
+    if (pool && groupId) {
+      await notifyMembers(
+        pool.contributions.map((c) => c.uid),
+        "Pool Deleted",
+        `The pool for ${pool.month} has been deleted by the admin.`,
+        groupId
+      );
+    }
+    showToast("Pool deleted", "success");
   };
 
   const getPoolBalance = (pool: MonthlyPool) => {
@@ -179,13 +200,16 @@ export function useMonthlyPool(groupId: string | null) {
     const contributed = contribution?.paid ? contribution.amount : 0;
     const spent = pool.expenses
       .filter((e) => e.participants.includes(uid))
-      .reduce((s, e) => s + e.amount / e.participants.length, 0);
+      .reduce((s, e) => {
+        if (e.split_details && e.split_details[uid] != null) return s + e.split_details[uid];
+        return s + e.amount / e.participants.length;
+      }, 0);
     return contributed - spent;
   };
 
   return {
     pools, currentPool, archivedPools, loading,
-    createPool, markContribution, addPoolExpense, closePool,
+    createPool, markContribution, addPoolExpense, closePool, deletePool,
     getPoolBalance, getMemberBalance, sendContributionReminders,
   };
 }

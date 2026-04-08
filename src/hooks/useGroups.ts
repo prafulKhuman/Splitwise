@@ -119,6 +119,35 @@ export function useGroups() {
     showToast("Settings updated", "success");
   };
 
+  const archiveGroup = async (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (group) {
+      const others = group.members.filter((m) => m.uid !== user?.uid);
+      const batch = writeBatch(db);
+      const colRef = collection(db, "notifications");
+      for (const m of others) {
+        const ref = doc(colRef);
+        batch.set(ref, {
+          user_id: m.uid,
+          type: "group",
+          title: "Group Archived",
+          message: `"${group.name}" was archived by the admin`,
+          read: false,
+          group_id: groupId,
+          created_at: new Date().toISOString(),
+        });
+      }
+      await batch.commit();
+    }
+    await updateDoc(doc(db, "groups", groupId), { is_disabled: true });
+    showToast("Group archived", "success");
+  };
+
+  const restoreGroup = async (groupId: string) => {
+    await updateDoc(doc(db, "groups", groupId), { is_disabled: false });
+    showToast("Group restored", "success");
+  };
+
   const deleteGroup = async (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
     if (group) {
@@ -153,6 +182,6 @@ export function useGroups() {
 
   return {
     groups, loading, createGroup, addMember, removeMember,
-    updateSettings, deleteGroup, isAdmin, canAdd, canEdit,
+    updateSettings, archiveGroup, restoreGroup, deleteGroup, isAdmin, canAdd, canEdit,
   };
 }

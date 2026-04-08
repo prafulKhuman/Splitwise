@@ -18,8 +18,11 @@ import { useState } from "react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
+type BreadcrumbItem = { label: string; href: string };
+
 type Props = {
   title: string;
+  breadcrumbs: BreadcrumbItem[];
   activeNav: string;
   onMenuClick?: () => void;
   showMenuButton?: boolean;
@@ -33,7 +36,7 @@ const NOTIF_COLORS: Record<string, string> = {
   reminder: "#FF6B8A",
 };
 
-export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }: Props) {
+export default function TopBar({ title, breadcrumbs, activeNav, onMenuClick, showMenuButton }: Props) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { mode, toggleMode } = useThemeMode();
@@ -84,11 +87,20 @@ export default function TopBar({ title, activeNav, onMenuClick, showMenuButton }
             separator={<NavigateNext sx={{ fontSize: 14, color: "text.secondary" }} />}
             sx={{ display: { xs: "none", sm: "flex" }, mb: 0.3, "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" } }}
           >
-            <Link underline="hover" onClick={() => router.push("/dashboard")}
-              sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", "&:hover": { color: "#6C63FF" } }}>
-              <Home sx={{ fontSize: 16 }} /> Home
-            </Link>
-            <Typography sx={{ fontSize: 13, color: "text.primary", fontWeight: 600, whiteSpace: "nowrap" }}>{title}</Typography>
+            {breadcrumbs.map((crumb, i) => {
+              const isLast = i === breadcrumbs.length - 1;
+              return isLast ? (
+                <Typography key={crumb.href} sx={{ fontSize: 13, color: "text.primary", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  {crumb.label}
+                </Typography>
+              ) : (
+                <Link key={crumb.href} underline="hover" onClick={() => router.push(crumb.href)}
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.secondary", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", "&:hover": { color: "#6C63FF" } }}>
+                  {i === 0 && <Home sx={{ fontSize: 16 }} />}
+                  {crumb.label}
+                </Link>
+              );
+            })}
           </Breadcrumbs>
           <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ lineHeight: 1.2, fontSize: { xs: "1rem", md: "1.25rem" } }}>
             {title}
